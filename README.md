@@ -3,6 +3,17 @@
 把同名 PDF 文稿《地球生命演化史(正式版·全章彩图版)》结构化整理成静态在线书,
 组织方式参考同目录另一本书《从金融零基础到量化研究者》(finance-to-quant)。
 
+## 在线地址与发布
+
+- Cloudflare Pages: https://earth-life-evolution.pages.dev/
+- GitHub Pages: https://chenxuan520.github.io/earth-life-evolution/
+- 仓库: https://github.com/chenxuan520/earth-life-evolution
+
+push 到 main 即自动双发(`.github/workflows/deploy.yml`):
+checkout → `build_book.py` 重建 → `check_book.py` 校验 →
+gh-pages 分支(GitHub Pages, 站点根) + wrangler-action(Cloudflare Pages)。
+Cloudflare 两个 secret 已配在仓库: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`。
+
 ## 目录结构
 
 ```
