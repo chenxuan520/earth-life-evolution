@@ -18,6 +18,10 @@ class Links(HTMLParser):
         self.imgs = []
         self.ids = set()
         self.h1 = 0
+        self._div_stack = []
+        self.card_nesting = 0
+        self.cards = 0
+        self.cards_no_p = 0
 
     def handle_starttag(self, tag, attrs):
         d = dict(attrs)
@@ -29,6 +33,24 @@ class Links(HTMLParser):
             self.ids.add(d["id"])
         if tag == "h1":
             self.h1 += 1
+        if tag == "div":
+            is_card = "species-card" in (d.get("class") or "")
+            if is_card:
+                if "card" in self._div_stack:
+                    self.card_nesting += 1
+                self.cards += 1
+                self._div_stack.append("card")
+                self._card_p = 0
+            else:
+                self._div_stack.append("div")
+        if tag == "p" and "card" in getattr(self, "_div_stack", []):
+            self._card_p = getattr(self, "_card_p", 0) + 1
+
+    def handle_endtag(self, tag):
+        if tag == "div" and self._div_stack:
+            top = self._div_stack.pop()
+            if top == "card" and getattr(self, "_card_p", 0) == 0:
+                self.cards_no_p += 1
 
 
 def main():
@@ -50,6 +72,10 @@ def main():
         id_cache[p.name] = lp.ids
         if lp.h1 != 1:
             errors.append(f"{p.name}: h1 数量 = {lp.h1}")
+        if lp.card_nesting:
+            errors.append(f"{p.name}: 物种卡片嵌套 {lp.card_nesting} 处")
+        if lp.cards_no_p:
+            errors.append(f"{p.name}: {lp.cards_no_p} 张物种卡片无正文")
         for href in lp.hrefs:
             if href.startswith(("http", "mailto:", "#")):
                 continue

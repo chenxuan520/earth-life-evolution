@@ -83,34 +83,38 @@ def page(title, description, body, body_attr="", extra_js=""):
 def render_blocks(blocks, chnum=None):
     """章节 blocks -> HTML。图注/图、物种条目、段落。"""
     out = []
-    open_species = 0
+    in_grid = False       # 是否在 species-grid 里
+    in_card = False       # 是否有未闭合的物种卡片
     for b in blocks:
         t = b["type"]
         if t == "h2":
-            while open_species:
+            if in_card:
                 out.append("</div>")
-                open_species -= 1
+                in_card = False
+            if in_grid:
+                out.append("</div>")
+                in_grid = False
             out.append(f"<h2>{esc(b['text'])}</h2>")
         elif t == "h3":
-            if not open_species:
+            if in_card:
+                out.append("</div>")   # 闭合上一张物种卡片
+            if not in_grid:
                 out.append('<div class="species-grid">')
-                open_species += 1
+                in_grid = True
             out.append(f'<div class="species-card"><h3>{esc(b["text"])}</h3>')
+            in_card = True
         elif t == "p":
-            txt = b["text"]
-            if open_species:
-                out.append(f"<p>{esc(txt)}</p>")
-            else:
-                out.append(f"<p>{esc(txt)}</p>")
+            out.append(f"<p>{esc(b['text'])}</p>")
         elif t == "figure":
             cap = esc(b["caption"])
             out.append(
                 f'<div class="figure reveal"><img class="figure__img" '
                 f'src="{b["src"]}" alt="{cap}" loading="lazy" />'
                 f'<p class="figure__cap">{cap}</p></div>')
-    while open_species:
+    if in_card:
         out.append("</div>")
-        open_species -= 1
+    if in_grid:
+        out.append("</div>")
     return "\n".join(out)
 
 

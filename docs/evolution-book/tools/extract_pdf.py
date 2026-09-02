@@ -379,12 +379,16 @@ def parse_summary(doc, page_range, drop_titles):
                 continue
             for r in rows:
                 raw = ["-" if c is None else c for c in r]
-                # 单元格内折行: 连字符且不补空格; 中英文之间补空格
+                # 单元格内折行: 连字符断词直接接合; 两侧都是 CJK 直接接合,
+                # 其余(拉丁词断行、中文名|学名分界)补空格。行内 "古DNA" 不受影响。
                 cells = []
                 for c in raw:
                     c = re.sub(r"-\s*\n\s*", "-", c)
-                    c = re.sub(r"\s*\n\s*", "", c)
-                    c = re.sub(r"(?<=[一-鿿])(?=[A-Za-z])", " ", c)   # 中文名 | 学名
+                    def _join(m0):
+                        l, r = m0.group(1), m0.group(2)
+                        both_cjk = ("一" <= l <= "鿿") and ("一" <= r <= "鿿")
+                        return l + ("" if both_cjk else " ") + r
+                    c = re.sub(r"(.)\n(.)", _join, c)
                     c = re.sub(r"\s{2,}", " ", c).strip()
                     cells.append(c)
                 if not cells or "中文名" in cells[0] or not cells[0]:
